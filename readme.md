@@ -2,4 +2,4 @@
 
 #### Showcase
 
-![showcase](./asset/android.jpg)
+<img src="./asset/android.jpg" alt="drawing" height="400"/>
