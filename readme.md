@@ -1,2 +1,2 @@
-\# Apod app
+# Apod app
 
