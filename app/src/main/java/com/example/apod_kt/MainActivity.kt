@@ -1,6 +1,7 @@
 package com.example.apod_kt
 
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -26,6 +27,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -37,6 +39,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.util.fastCbrt
 import coil.compose.AsyncImage
+import com.example.apod_kt.ui.components.BottomBar
 import io.ktor.client.call.body
 import io.ktor.client.request.get
 import io.ktor.client.statement.bodyAsText
@@ -48,74 +51,77 @@ import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.client.call.body
 import kotlinx.serialization.json.Json
+import android.os.Parcelable
+import androidx.compose.foundation.gestures.scrollable
+import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.apod_kt.ui.ApodViewModel
+import kotlinx.parcelize.Parcelize
+import org.jetbrains.annotations.Async
 
+
+private const val TAG = "MainActivity"
 class MainActivity : ComponentActivity() {
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        Log.d(TAG, "onCreate Called")
         enableEdgeToEdge()
         setContent {
             ApodktTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
+                Scaffold(
+                    modifier = Modifier.fillMaxSize(),
+                    bottomBar = {
+                        BottomBar()
+                    }
+                ) { innerPadding ->
                     Column (
                         modifier = Modifier
-                            .statusBarsPadding()
+                            .statusBarsPadding().padding(innerPadding)
                     ) {
-                        loadData()
-//                        loadFakeData()
-//                        manualCor()
+                        apodScreen()
                     }
-//                    Greeting(
-//                        name = "Android",
-//                        modifier = Modifier.padding(innerPadding)
-//                    )
                 }
             }
         }
     }
+
+    override fun onResume() {
+        super.onResume()
+        Log.d(TAG, "onResume Called")
+    }
+
+    override fun onRestart() {
+        super.onRestart()
+        Log.d(TAG, "onRestart Called")
+    }
+
+    override fun onPause() {
+        super.onPause()
+        Log.d(TAG, "onPause Called")
+    }
+
+    override fun onStop() {
+        super.onStop()
+        Log.d(TAG, "onStop Called")
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        Log.d(TAG, "onDestroy Called")
+    }
+
 }
 
-@Serializable
-data class Apod(
-    val copyright: String?,
-    val date: String,
-    val explanation: String,
-    val hdurl: String,
-    @SerialName("media_type")
-    val mediaType: String,
-    @SerialName("service_version")
-    val serviceType: String,
-    val title: String,
-    val url: String
-)
 
 @Composable
-fun loadData() {
-    val client = HttpClient(OkHttp) {
-        install(ContentNegotiation) {
-            json(Json {
-                prettyPrint = true
-                isLenient = true
-                ignoreUnknownKeys = true
-            })
-        }
-    }
-    var loading by remember {mutableStateOf(true)}
-    var responseText by remember { mutableStateOf<Apod?>(null)}
-    var responseTextPre: String = ""
-    LaunchedEffect(Unit) {
-        try {
-            val response: Apod = client.get("https://api.nasa.gov/planetary/apod?api_key=ZtFjqXtx27meihPnioblbXIi5jzZqNDEqkMWK8g8").body()
-            responseText =  response
-            loading = false
+fun apodScreen(viewModel: ApodViewModel = viewModel()) {
+    val data by viewModel.data.collectAsState()
+    val loading by viewModel.loading.collectAsState()
 
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-    }
-
-
-    Box(modifier = Modifier.fillMaxSize()) {
-
+    Box (
+        modifier = Modifier.fillMaxSize()
+    ) {
         if (loading) {
             Box(
                 modifier = Modifier.fillMaxSize(),
@@ -123,40 +129,97 @@ fun loadData() {
             ){
                 CircularProgressIndicator()
             }
-        }
-        else {
+        } else {
             Column (
                 modifier = Modifier.verticalScroll(rememberScrollState())
             ) {
-                responseText?.run {
-                    url?.let {
-                        AsyncImage(
-                            model = it,
-                            contentDescription = "test",
-                            modifier = Modifier.fillMaxWidth().aspectRatio(16f / 9f),
-                            contentScale = ContentScale.Crop
-                        )
-                    }
+                AsyncImage(
+                    model = data.url,
+                    contentDescription = "test",
+                    modifier = Modifier.fillMaxWidth().aspectRatio(16f / 9f),
+                    contentScale = ContentScale.Crop
+                )
+                Column (
+                    modifier = Modifier.padding(20.dp)
+                ) {
+                    Text(data.title, style = MaterialTheme.typography.displayMedium, modifier = Modifier.padding(bottom = 20.dp))
+                    Text( data.explanation, style = MaterialTheme.typography.bodyLarge)
 
-                    Box(
-                        modifier = Modifier.padding(20.dp)
-                    ){
-                        Column {
-                            title?.let { Text(it, style = MaterialTheme.typography.displayMedium) }
-                            explanation?.let { Text(it, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(top=20.dp))}
-                        }
-                    }
                 }
             }
-
         }
-
-
     }
 }
 
-@Composable
-fun loadFakeData() {
+//@Composable
+//fun loadData() {
+//    val client = HttpClient(OkHttp) {
+//        install(ContentNegotiation) {
+//            json(Json {
+//                prettyPrint = true
+//                isLenient = true
+//                ignoreUnknownKeys = true
+//            })
+//        }
+//    }
+//    var loading by rememberSaveable {mutableStateOf(true)}
+//    var responseText by rememberSaveable { mutableStateOf<Apod?>(null)}
+//    var responseTextPre: String = ""
+//    LaunchedEffect(Unit) {
+//        try {
+//            val response: Apod = client.get("https://api.nasa.gov/planetary/apod?api_key=ZtFjqXtx27meihPnioblbXIi5jzZqNDEqkMWK8g8").body()
+//            responseText =  response
+//            loading = false
+//
+//        } catch (e: Exception) {
+//            e.printStackTrace()
+//        }
+//    }
+//
+//
+//    Box(modifier = Modifier.fillMaxSize()) {
+//
+//        if (loading) {
+//            Box(
+//                modifier = Modifier.fillMaxSize(),
+//                contentAlignment = Alignment.Center
+//            ){
+//                CircularProgressIndicator()
+//            }
+//        }
+//        else {
+//            Column (
+//                modifier = Modifier.verticalScroll(rememberScrollState())
+//            ) {
+//                responseText?.run {
+//                    url?.let {
+//                        AsyncImage(
+//                            model = it,
+//                            contentDescription = "test",
+//                            modifier = Modifier.fillMaxWidth().aspectRatio(16f / 9f),
+//                            contentScale = ContentScale.Crop
+//                        )
+//                    }
+//
+//                    Box(
+//                        modifier = Modifier.padding(20.dp)
+//                    ){
+//                        Column {
+//                            title?.let { Text(it, style = MaterialTheme.typography.displayMedium) }
+//                            explanation?.let { Text(it, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(top=20.dp))}
+//                        }
+//                    }
+//                }
+//            }
+//
+//        }
+//
+//
+//    }
+//}
+
+//@Composable
+//fun loadFakeData() {
 //    var data by remember { mutableStateOf("loading...") }
 //
 //    LaunchedEffect(Unit) {
@@ -164,7 +227,7 @@ fun loadFakeData() {
 //    }
 //
 //    Text(data)
-}
+//}
 
 @Composable
 fun manualCor() {
