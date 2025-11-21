@@ -61,6 +61,8 @@ import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.collectAsState
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.apod_kt.ui.ApodViewModel
 import kotlinx.parcelize.Parcelize
@@ -99,7 +101,7 @@ class MainActivity : ComponentActivity() {
                 ) { innerPadding ->
                     Column (
                         modifier = Modifier
-                            .statusBarsPadding().padding(innerPadding)
+                            .padding(innerPadding)
                     ) {
                         if (showDialog) {
                             DatePickerBox(
@@ -184,9 +186,12 @@ fun apodScreen(viewModel: ApodViewModel = viewModel()) {
                 Column (
                     modifier = Modifier.padding(20.dp)
                 ) {
-                    Text(data.title, style = MaterialTheme.typography.displayMedium, modifier = Modifier.padding(bottom = 20.dp))
+                    Text(data.title, style = MaterialTheme.typography.displayMedium, modifier = Modifier.padding(bottom = 10.dp))
+                    Text(data.date, style = MaterialTheme.typography.bodySmall.copy(
+                        fontWeight = FontWeight.Bold,
+                        color = Color.Gray
+                    ), modifier = Modifier.padding(bottom = 10.dp))
                     Text( data.explanation, style = MaterialTheme.typography.bodyLarge)
-
                 }
             }
         }
