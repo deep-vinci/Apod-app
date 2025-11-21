@@ -1,5 +1,7 @@
 package com.example.apod_kt
 
+import DatePickerBox
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
@@ -52,34 +54,67 @@ import io.ktor.serialization.kotlinx.json.json
 import io.ktor.client.call.body
 import kotlinx.serialization.json.Json
 import android.os.Parcelable
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.gestures.scrollable
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CalendarToday
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
 import androidx.compose.runtime.collectAsState
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.apod_kt.ui.ApodViewModel
 import kotlinx.parcelize.Parcelize
 import org.jetbrains.annotations.Async
+import java.text.SimpleDateFormat
+import java.time.ZoneId
+import java.util.Date
+import java.util.Locale
+import java.util.TimeZone
+import kotlin.time.ExperimentalTime
+import kotlin.time.Instant
 
 
 private const val TAG = "MainActivity"
 class MainActivity : ComponentActivity() {
 
+    @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         Log.d(TAG, "onCreate Called")
         enableEdgeToEdge()
         setContent {
             ApodktTheme {
+                val viewModel: ApodViewModel = viewModel()
+                var showDialog by remember { mutableStateOf(false) }
                 Scaffold(
                     modifier = Modifier.fillMaxSize(),
                     bottomBar = {
                         BottomBar()
+                    },
+                    floatingActionButton = {
+                        FloatingActionButton(onClick = { showDialog = true }) {
+                            Icon(Icons.Filled.CalendarToday, "Add button")
+                        }
                     }
                 ) { innerPadding ->
                     Column (
                         modifier = Modifier
                             .statusBarsPadding().padding(innerPadding)
                     ) {
-                        apodScreen()
+                        if (showDialog) {
+                            DatePickerBox(
+                                onDismiss = { showDialog = false },
+                                onDateSelected = { date ->
+                                    showDialog = false
+                                    println(convertMillisToDate(date))
+                                    viewModel.changeDate(convertMillisToDate(date))
+//                                    millis to date yyyy-mm-dd conversion
+//                                    viewModel.changeDate("2025-11-20")
+
+                                }
+                            )
+                        }
+                        apodScreen(viewModel = viewModel)
                     }
                 }
             }
@@ -113,6 +148,13 @@ class MainActivity : ComponentActivity() {
 
 }
 
+fun convertMillisToDate(millis: Long?): String {
+    val formatter = SimpleDateFormat("yyyy-MM-dd", Locale.US)
+
+    formatter.timeZone = TimeZone.getTimeZone("UTC")
+
+    return formatter.format(Date(millis ?: 0L))
+}
 
 @Composable
 fun apodScreen(viewModel: ApodViewModel = viewModel()) {
